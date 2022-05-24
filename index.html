@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang='fr'>
+    <head>
+        <meta charset='utf-8'/>
+        <link rel='stylesheet' href='style.css'/>
+        <title>zipcomic</title>
+        <!-- <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png"> -->
+        <!-- <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png"> -->
+        <script src="https://raw.githubusercontent.com/Stuk/jszip/master/dist/jszip.min.js"></script>
+        <script src="https://raw.githubusercontent.com/Stuk/jszip-utils/master/dist/jszip-utils.min.js"></script>
+        <script>
+            function clonecard(title,link,img){
+                let cln=document.querySelector('#basecard').cloneNode(true);
+                document.querySelector('.card-wrap').appendChild(cln);
+                cln.style='display:block;';
+                cln.querySelector('img').src=img;
+                cln.querySelector('h1').innerHTML=title;
+                cln.querySelector('p').innerHTML=link;
+                cln.addEventListener('click',()=>(window.location.href=link));
+            }
+            function testresolve(){
+                return new Promise((resolve,reject)=>{
+                    setTimeout(()=>{
+                        resolve('haha')
+                    },2000)
+                })
+            }
+            function menuopen(){
+                document.querySelector('#menuhover').style.display='block';
+            }
+            function menuclose(){
+                document.querySelector('#menuhover').style.display='none';
+            }
+            function inputZip(){
+                let inputFile=document.querySelector('#inputFile');
+                inputFile.click();
+            }
+            async function read(file){
+                console.log('called');
+                let thefile=await openZip();
+            }
+            function openZip(){
+                return new Promise((resolve,reject)=>(
+                    resolve()
+                ));
+            };
+        </script>
+    </head>
+    <body>
+        <div class="main-wrap">
+            <header class="header">
+                <nav class="nav nav--left">
+                    <div class="nav-item nav-item--logo">
+                        <img class="logo" src="favicons/logo.png" height=70 alt="Zipcomic"/>
+                    </div>
+                </nav>
+                <nav class="nav nav--right">
+                    <div style="position:relative">
+                        <a class ="nav-item nav-item--logo menu"><img src="favicons/menu.png" height=25 alt="menu"/></a>
+                        <div class="menu" id="menuhover" style="display:none;">
+                            <ul>
+                                <li><a href="test.html">Clear history</a></li>
+                                <li><a href="test.html">Reading direction</a></li><!-- todo -->
+                                <li><a href="test.html">Help</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <a class ="nav-item nav-item--logo" href="#"><img src="favicons/plus.png" height=25 alt="menu"/></a>
+                    <form class="nav-item nav-item--searchbar" action="#" method="GET" name="searchbar">
+                        <input type="text" id="searchbar" name="search" placeholder="Search"/>
+                    </form>
+                </nav>
+            </header>
+            <main>
+                <form action="reader.php" method="GET" name="reader">
+                    <input type='file' id='inputFile' name='inputFile' accept=".zip" style="display:none;">
+                    <input type='submit' id='submitFile' name='submitFile' style="display:none;">
+                </form>
+                <div class="content-item">
+                    <button class="button--big" onclick="inputZip()">C'est Parti !</button>
+                </div>
+                <div class="content-item card-wrap">
+                    <div class="card" id="basecard" style="display: none;">
+                        <div class="card__img"><img src="images/a.jpg" alt="img"/></div>
+                        <div class="card__text"><h1>title</h1><p>link</p></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <script>
+            if(document.getElementsByClassName('menu')!==null && document.querySelector('#menuhover')!==null){
+                let menus=document.getElementsByClassName('menu')
+                for(let e of menus){
+                    e.addEventListener("mouseover",menuopen);
+                    e.addEventListener("mouseout",menuclose);
+                };
+            };
+            if(document.querySelector('#inputFile')!==null){
+                let inputFile=document.querySelector('#inputFile');
+                inputFile.addEventListener("change",function(){
+                    // openZip(inputFile.files[0]);
+                });
+            };
+        </script>
+    </body>
+</html>

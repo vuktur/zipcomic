@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        #dlman-div {
+            position: absolute;
+            top: 100px;
+            right: 50px;
+            background-color: navy;
+            border-radius: 15px;
+            height: auto;
+            width: 300px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column
+        }
+
+        #dlman-btn {
+            background-color: transparent;
+            color: white;
+            border-radius: 15px 15px 0 0;
+            font-family: Helvetica, sans-serif;
+            font-size: 2em;
+            font-weight: bold;
+            border: none;
+            padding: 5px 0;
+            text-align: center;
+            user-select: none;
+            cursor: pointer
+        }
+
+        #dlman-btn:hover {
+            background-color: #00000020
+        }
+
+        #dlman-btn:disabled {
+            background-color: #00000070;
+            cursor: default;
+            color: transparent
+        }
+
+        #dlman-p {
+            background-color: transparent;
+            color: white;
+            border-radius: 15px 15px 0 0;
+            font-family: Helvetica, sans-serif;
+            font-size: 1em;
+            font-weight: normal;
+            margin: 10px
+        }
+
+        #dlman-loadbar {
+            background-color: #eee;
+            height: 5px
+        }
+
+        #dlman-progress {
+            background-color: deepskyblue;
+            width: 0%;
+            height: 5px
+        }
+    </style>
+</head>
+
+<body>
+    <div id="dlman-div">
+        <button id="dlman-btn" onclick="loading();this.setAttribute('disabled','');">Download</button>
+        <div id="dlman-loadbar">
+            <div id="dlman-progress"></div>
+        </div>
+        <p id="dlman-p">status : idle</p>
+    </div>
+    <script>
+        function loading() {
+            var max = getComputedStyle(document.querySelector('#dlman-loadbar')).width.split('');
+            max.splice(-2, 2);
+            max = parseInt(max.join(''));
+            var progress = document.querySelector('#dlman-progress');
+            progress.style.width = '0px';
+            var w = 0;
+            var interval = setInterval(_ => {
+                if (progress.w > 100) {
+                    clearInterval(interval);
+                } else {
+                    w++;
+                    progress.style.width = `${Math.round(w * max / 100)}px`;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>
