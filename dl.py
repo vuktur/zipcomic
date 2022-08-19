@@ -1,23 +1,15 @@
-# from email import header
 import os
+from re import A
 import sys
-# from wsgiref import headers
 import requests as rqs
 from bs4 import BeautifulSoup as bs
 import fpdf
 import html5lib
-# from urllib.parse import urlparse
-# from urllib.request import urlopen
-# from zipfile import ZipFile
-# from selenium import webdriver
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.common.by import By
-# from webdriver_manager.firefox import GeckoDriverManager
 import imageio
 from PIL import Image
 import validators
 import numpy as np
+import json
 
 
 headers = {
@@ -33,93 +25,15 @@ def progBar(i, tot, message="Loading"):
         print(f"{message} - DONE{' '*105}", end='\n')
 
 
-def main(source, url, sel, skipPages):
-    if not validators.url(url):
-        raise AttributeError
-    r = rqs.get(url)
-    S = getSiteSpecs(r.url)
-    soup = bs(r.text, "html5lib")
-    chaps = soup.select(S['chaptersListElt'])
-    if S['chaptersListOrderDescending']:
-        chaps = chaps[::-1]
-    if type(sel) == int:
-        if sel >= 0:
-            scrapChap(chaps[sel].get('href'), skipPages)
-        else:
-            raise AttributeError
-    elif (type(sel) == list or type(sel) == tuple) and len(sel) == 2 and type(sel[0]) == int:
-        for i in range(sel[0], sel[1] if type(sel[1]) == int and sel[0] < sel[1] and sel[1] < len(chaps) else len(chaps)):
-            scrapChap(chaps[i].get('href'), skipPages)
-    else:
-        raise AttributeError
-    # driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
-    # driver.set_window_size(100, 100)
-    # driver.get(url)
-
-
 def getSiteSpecs(url):
     domain = url.split('/')[2]
-    specs = {
-        # "scansmangas.xyz": {
-        #     "chaptersListElt": "#chapter_list li .desktop>a",
-        #     "title": ".headpost h1",
-        #     "pageSel": ".nav_apb a",
-        #     "pppImg": ".area img"
-        # },
-        "mangascan.cc": {
-            "chaptersListElt": "ul.chapters li a",
-            "chaptersListOrderDescending": True,
-            "pageFormat": None,
-            "title": ".page-header h1",
-            "img": "#all img",
-            "src": "data-src",
-            "nextBtn": None
-        },
-        "mangakakalot.com": {
-            "chaptersListElt": ".chapter-list .row a",
-            "chaptersListOrderDescending": True,
-            "pageFormat": None,
-            "title": ".info-top-chapter h2",
-            "img": ".container-chapter-reader img",
-            "src": "src",
-            "nextBtn": None
-        },
-        "oyasumipunpun.com": {
-            "chaptersListElt": ".wp-block-gallery ul.su-posts li a",
-            "chaptersListOrderDescending": True,
-            "pageFormat": None,
-            "title": "article header.entry-header h1",
-            "img": ".entry-content .separator img",
-            "src": "src",
-            "nextBtn": None
-        },
-        "manga-scan.org": {
-            "chaptersListElt": ".chapters-list a",
-            "chaptersListOrderDescending": True,
-            "pageFormat": "{url}/{n}",
-            "title": "article header.entry-header h1",
-            "img": ".entry-content .separator img",
-            "src": "src",
-            "nextBtn": ".btn-next"
-        }
-        # "japscan.ws": {                                            # CEST MORT YA UN SHADOWROOT
-        #     "chaptersListElt": ".chapters_list .collapse a",
-        #     "chaptersListOrderDescending":True,
-        #     "inOnePage": True,
-        #     "title": ".info-top-chapter h2",
-        #     # "prev": ".previous a",
-        #     # "next": ".next a",
-        #     # "pageSel": ".dropdown-menu.inner li>a",
-        #     # "pppImg": "#ppp img",
-        #     "allImg": ".container-chapter-reader img",
-        #     "src": "src"
-        # }
-    }
+    with open("./specs.json", 'r') as f:
+        specs = json.load(f)
     if domain in specs:
         return specs[domain]
 
 
-def scrapChap(url, skipPages):
+def scrapChap(url, pagesToSkip):
     url = url.strip('/')
     r = rqs.get(url, headers=headers)
     S = getSiteSpecs(r.url)
@@ -129,6 +43,7 @@ def scrapChap(url, skipPages):
     P = []
     H = 0
     W = 0
+    # FONCTIONNER PLUTOT PAR MOYENNE DE HAUTEUR ET LARGEUR ET LA MOYENNE SERA LA TRUC DE BASE ET POUR LES DOUBLES LES METTRE EN PETIT
     n = 1
     btn = True
     while btn:
@@ -141,9 +56,9 @@ def scrapChap(url, skipPages):
         btn = soup.select(S['nextBtn']) if S['nextBtn'] else False
         n += 1
     for n, p in enumerate(P):
-        if n+1 in skipPages:
+        if n+1 in pagesToSkip:
             continue
-        h, w, _ = openImage(p).shape
+        h, w, *_ = openImage(p).shape
         if H < h:
             H = h
         if W < w:
@@ -154,7 +69,7 @@ def scrapChap(url, skipPages):
     # else:
     d = fpdf.FPDF('P', 'pt', (W, H))
     for n, p in enumerate(P):
-        if n+1 in skipPages:
+        if n+1 in pagesToSkip:
             continue
         imageio.imwrite(f'temp{n}.jpg', openImage(p))
         d.add_page()
@@ -179,14 +94,51 @@ def scrapChap(url, skipPages):
 def openImage(p):
     try:
         r = rqs.get(p, headers=headers)
-        return imageio.imread(r.content)[:, :, :3]
+        image = imageio.imread(r.content)
+        if len(image.shape) == 3:
+            return image[:, :, :3]
+        else:
+            return image
     except:
+        print("/n", p)
         raise
 
 
+def main(source, url, selectedChaps, skip=[]):
+    if not validators.url(url):
+        raise AttributeError
+    r = rqs.get(url)
+    S = getSiteSpecs(r.url)
+    soup = bs(r.text, "html5lib")
+    chaps = soup.select(S['chaptersListElt'])
+    if S['chaptersListOrderDescending']:
+        chaps = chaps[::-1]
+    selectedChaps = selectedChaps.split(',')
+    if skip != []:
+        skip = skip.split(',')
+    pagesToSkip = []
+    for i in skip:
+        try:
+            i = list(map(int, i.split('-')))
+            if i != sorted(i):
+                raise AttributeError
+            for j in range(i[0], i[1]+1 if len(i) == 2 else i[0]+1):
+                pagesToSkip.append(j)
+        except:
+            raise
+    for i in selectedChaps:
+        try:
+            i = list(map(int, i.split('-')))
+            if i != sorted(i):
+                raise AttributeError
+            for j in range(i[0], (i[1]+1 if i[1] <= len(chaps) else len(chaps)+1) if len(i) == 2 else i[0]+1):
+                scrapChap(chaps[j].get('href'), pagesToSkip)
+        except:
+            raise
+
+
 if __name__ == "__main__":
-    # main(*sys.argv)
-    main("vscode", "https://mangascan.cc/manga/vinland-saga", sel=94, skipPages=[2])
+    main(*sys.argv)
 
 # https://mangascan.cc/manga/vinland-saga
 # https://www.japscan.ws/manga/bonne-nuit-punpun/

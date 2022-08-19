@@ -1,0 +1,47 @@
+{
+    "mangascan.cc": {
+        "chaptersListElt": "ul.chapters li a",
+        "chaptersListOrderDescending": True,
+        "pageFormat": None,
+        "title": ".page-header h1",
+        "img": "#all img",
+        "src": "data-src",
+        "nextBtn": None
+    },
+    "mangakakalot.com": {
+        "chaptersListElt": ".chapter-list .row a",
+        "chaptersListOrderDescending": True,
+        "pageFormat": None,
+        "title": ".info-top-chapter h2",
+        "img": ".container-chapter-reader img",
+        "src": "src",
+        "nextBtn": None
+    },
+    "oyasumipunpun.com": {
+        "chaptersListElt": ".wp-block-gallery ul.su-posts li a",
+        "chaptersListOrderDescending": True,
+        "pageFormat": None,
+        "title": ".entry-title",
+        "img": ".entry-content .separator img",
+        "src": "src",
+        "nextBtn": None
+    },
+    "kaijimanga.com": {
+        "chaptersListElt": "#ceo_latest_comics_widget-3 ul li a",
+        "chaptersListOrderDescending": True,
+        "pageFormat": None,
+        "title": ".entry-title",
+        "img": ".entry-content img",
+        "src": "src",
+        "nextBtn": None
+    },
+    "manga-scan.org": {
+        "chaptersListElt": ".chapters-list a",
+        "chaptersListOrderDescending": True,
+        "pageFormat": "{url}/{n}",
+        "title": ".entry-title",
+        "img": ".entry-content .separator img",
+        "src": "src",
+        "nextBtn": ".btn-next"
+    }
+}
