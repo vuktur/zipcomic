@@ -5,15 +5,11 @@ import re
 import warnings
 from argparse import ArgumentParser
 from collections import namedtuple
-from datetime import datetime as dt
 from urllib.parse import urlparse
 
-import lxml
-import numpy as np
 import requests as rqs
 from bs4 import BeautifulSoup as bs
 from fpdf import FPDF
-# import imageio.v3 as iio
 from PIL import Image
 
 HEADERS = {
