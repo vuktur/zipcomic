@@ -1,145 +1,148 @@
+import io
+import json
 import os
-from re import A
-import sys
+import re
+import warnings
+from argparse import ArgumentParser
+from collections import namedtuple
+from datetime import datetime as dt
+from urllib.parse import urlparse
+
+import lxml
+import numpy as np
 import requests as rqs
 from bs4 import BeautifulSoup as bs
-import fpdf
-import html5lib
-import imageio
+from fpdf import FPDF
+# import imageio.v3 as iio
 from PIL import Image
-import validators
-import numpy as np
-import json
 
-
-headers = {
+HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.136 Safari/537.36"
 }
 
+RMK_H = 1872
+RMK_W = 1404
+
 
 def progBar(i, tot, message="Loading"):
-    y = int(i*100/tot)+1
-    n = int(100-i*100/tot)-1
+    y = i*100//tot
+    n = 100-y
     print(f"{message} : \t[{'█'*y}{'_'*n}]", end='\r')
     if n <= 0:
         print(f"{message} - DONE{' '*105}", end='\n')
 
 
-def getSiteSpecs(url):
-    domain = url.split('/')[2]
-    with open("./specs.json", 'r') as f:
-        specs = json.load(f)
-    if domain in specs:
-        return specs[domain]
-
-
-def scrapChap(url, pagesToSkip):
-    url = url.strip('/')
-    r = rqs.get(url, headers=headers)
-    S = getSiteSpecs(r.url)
-    soup = bs(r.text, "html5lib")
-    title = ''.join(list(map(lambda x: "_" if x in (" ", "/", "\\", ".")
-                    else x, list(soup.select(S["title"])[0].text.strip()))))
-    P = []
-    H = 0
-    W = 0
-    # FONCTIONNER PLUTOT PAR MOYENNE DE HAUTEUR ET LARGEUR ET LA MOYENNE SERA LA TRUC DE BASE ET POUR LES DOUBLES LES METTRE EN PETIT
-    n = 1
-    btn = True
-    while btn:
-        r = rqs.get(S['pageFormat'].format(url=url, n=n)
-                    if S['pageFormat'] else url, headers=headers)
-        soup = bs(r.text, "html5lib")
-        for i in soup.select(S['img']):
-            P.append(i.get(S['src']))
-            progBar(len(P), 1000, title)
-        btn = soup.select(S['nextBtn']) if S['nextBtn'] else False
-        n += 1
-    for n, p in enumerate(P):
-        if n+1 in pagesToSkip:
-            continue
-        h, w, *_ = openImage(p).shape
-        if H < h:
-            H = h
-        if W < w:
-            W = w
-        progBar(n+1, 2*len(P), title)
-    # if H < W:
-    #     d = fpdf.FPDF('L', 'pt', (H, W))
-    # else:
-    d = fpdf.FPDF('P', 'pt', (W, H))
-    for n, p in enumerate(P):
-        if n+1 in pagesToSkip:
-            continue
-        imageio.imwrite(f'temp{n}.jpg', openImage(p))
-        d.add_page()
-        # w = 210
-        # h = 210*i.shape[1]/i.shape[0]
-        d.image(f'temp{n}.jpg', 0, 0)  # , h, w)
-        os.remove(f'temp{n}.jpg')
-        progBar(len(P)+n+1, 2*len(P), title)
-    d.output(f"{os.getcwd()}/{title}.pdf", dest='F')
-
-    # if len(img[0][0]) > 3:
-    #     img2 = []
-    #     for j in range(len(img)):
-    #         img2.append([])
-    #         for k in range(len(img[j])):
-    #             img2[j].append(img[j][k][:-1])
-    # img = [[img[i][j][:-1] for j in range(len(img[i]))]for i in range(len(img))]
-    # img = img2
-    # NO ALPHA I GUESS?
-
-
-def openImage(p):
-    try:
-        r = rqs.get(p, headers=headers)
-        image = imageio.imread(r.content)
-        if len(image.shape) == 3:
-            return image[:, :, :3]
+def parseNumList(sourceString):
+    l = {}
+    for num in sourceString.split(','):
+        m = re.match(r'^(\d+)(?:-(\d+))?$', num)
+        if not m:
+            raise AttributeError(
+                "The second parameter must be the selected chapters by numbers (ex: 1,3,6-9 will select chap. 1, 3 and the chaps. 6 to 9)")
+        start = int(m.group(1))
+        if m.group(2) and int(m.group(2)) >= int(m.group(1)):
+            stop = int(m.group(2))
         else:
-            return image
-    except:
-        print("/n", p)
-        raise
+            stop = start
+        for i in range(start, stop+1):
+            l[i] = 1
+    return sorted(l.keys())
 
 
-def main(source, url, selectedChaps, skip=[]):
-    if not validators.url(url):
-        raise AttributeError
-    r = rqs.get(url)
-    S = getSiteSpecs(r.url)
-    soup = bs(r.text, "html5lib")
-    chaps = soup.select(S['chaptersListElt'])
-    if S['chaptersListOrderDescending']:
+def getSiteSpecs(url):
+    netloc = urlparse(url).netloc
+    allSpecs = json.load(open("./specs.json", 'r'))
+    specsType = namedtuple('Specs', allSpecs["default"].keys())
+    if netloc and netloc in allSpecs:
+        return specsType._make(allSpecs[netloc].values())
+    else:
+        raise AttributeError("Bad url")
+
+
+def handleError(err, url, args, action):
+    retryMessage = f"An error has occured!\nurl : {url}\nerror : {str(err)}\nWould you like to continue? [y/n] "
+    match action:
+        case "skip":
+            pass
+        case "retry":
+            scrap(url, args, "2ndtime")
+        case "raise":
+            raise
+        case "2ndtime":
+            print(
+                "It's the 2nd time this error has occured, maybe there's a real problem!")
+            raise
+        case "ask":
+            if input(retryMessage) == 'y':
+                scrap(url, args, "ask")
+            else:
+                raise
+        case _:
+            if input(retryMessage) == 'y':
+                scrap(url, args, "ask")
+            else:
+                raise
+
+
+def scrap(chapUrl, args, onError=None):
+    # if not onError:
+    #     onError = args.onError
+    S = getSiteSpecs(chapUrl)
+    try:
+        soup = bs(rqs.get(chapUrl, headers=HEADERS).text, "lxml")
+    except rqs.exceptions.ConnectionError as err:
+        handleError(err, chapUrl, args, onError or args.onError)
+    title = re.sub(r'[\s/\\.,]+', '_', soup.select(S.title)[0].text.strip())
+    progBar(0, 1, title)
+    pageList = []
+    n = 1
+    while True:
+        if S.pageFormat:
+            soup = bs(rqs.get(S.pageFormat.format(
+                url=chapUrl, n=n), headers=HEADERS).text, "lxml")
+        for n, image in enumerate(soup.select(S.img)):
+            if args.pagesToSkip and n+1 in args.pagesToSkip:
+                continue
+            pageList.append(image.get(S.src))
+        if not S.nextBtn or not soup.select(S.nextBtn):
+            break
+        n += 1
+    pdf = FPDF(unit="in")
+    pdf.set_margins(0, 0)
+    pdf.set_auto_page_break(False)
+    for n, p in enumerate(pageList):
+        with Image.open(io.BytesIO(rqs.get(p).content)) as image:
+            pdf.add_page(format=(image.width/72, image.height/72))
+            pdf.image(image)
+        progBar(n+1, len(pageList), title)
+    pdf.output(args.destPath+title+".pdf")
+
+
+def main(args):
+    specs = getSiteSpecs(args.url)
+    progBar(0, 1, "Getting chaps list")
+    chaps = bs(rqs.get(args.url).text, "lxml").select(specs.chaptersListElt)
+    progBar(1, 1, "Getting chaps list")
+    if specs.chaptersListOrderDescending:
         chaps = chaps[::-1]
-    selectedChaps = selectedChaps.split(',')
-    if skip != []:
-        skip = skip.split(',')
-    pagesToSkip = []
-    for i in skip:
-        try:
-            i = list(map(int, i.split('-')))
-            if i != sorted(i):
-                raise AttributeError
-            for j in range(i[0], i[1]+1 if len(i) == 2 else i[0]+1):
-                pagesToSkip.append(j)
-        except:
-            raise
-    for i in selectedChaps:
-        try:
-            i = list(map(int, i.split('-')))
-            if i != sorted(i):
-                raise AttributeError
-            for j in range(i[0], (i[1]+1 if i[1] <= len(chaps) else len(chaps)+1) if len(i) == 2 else i[0]+1):
-                scrapChap(chaps[j].get('href'), pagesToSkip)
-        except:
-            raise
+    for i in args.selectedChaps:
+        if i >= len(chaps):
+            warnings.warn(f"Chapter {i} and after are not available")
+            break
+        scrap(chaps[i].get('href'), args)
 
 
 if __name__ == "__main__":
-    main(*sys.argv)
-
-# https://mangascan.cc/manga/vinland-saga
-# https://www.japscan.ws/manga/bonne-nuit-punpun/
-# https://mangakakalot.com/manga/sn926977
+    parser = ArgumentParser()
+    parser.add_argument('url')
+    parser.add_argument(
+        '-s', '--select', dest='selectedChaps', type=parseNumList, default=0)
+    parser.add_argument('-S', '--skip', dest='pagesToSkip',
+                        type=parseNumList, default=None)
+    parser.add_argument('-d', '--dest', dest='destPath',
+                        default=f"{os.getcwd()}/chaps/")
+    parser.add_argument('-D', '--dim', dest='dimMethod',
+                        choices=["freq", "max", "rmk"], default="freq")
+    parser.add_argument('--onError', dest='onError',
+                        choices=["skip", "retry", "raise", "ask"], default="ask")
+    main(parser.parse_args())
