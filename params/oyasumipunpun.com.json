@@ -1,0 +1,6 @@
+{
+    "chapter_list": "#main ul.su-posts",
+    "img_list": ".entry-content",
+    "img_item": ".separator>a",
+    "src": "href"
+}

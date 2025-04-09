@@ -1,0 +1,6 @@
+{
+    "chapter_list": ".chapter-list",
+    "img_list": "#list-image",
+    "img_item": ".card-wrap",
+    "src": "data-url"
+}

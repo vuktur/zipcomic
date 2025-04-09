@@ -1,0 +1,6 @@
+{
+    "chapter_list": "#list-{cORv}-{lang}",
+    "img_list": ".card-wrap",
+    "src": "data-url",
+    "img_encrypt": "square"
+}

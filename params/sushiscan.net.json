@@ -1,0 +1,12 @@
+{
+  "chapter_list": "#chapterlist>ul",
+  "chapter_list_descending": false,
+  "img_list": null,
+  "img_item": "img",
+  "src": "src",
+  "next_page": {
+    "btn" : ".ch-next-btn",
+    "url_format": null
+  },
+  "img_encrypt": null
+}

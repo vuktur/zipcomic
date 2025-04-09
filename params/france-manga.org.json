@@ -1,0 +1,8 @@
+{
+    "chapter_list": ".chapters-list",
+    "title": ".entry-title",
+    "next_page":{
+        "btn": ".btn-next",
+        "url_format": "{url}{n}"
+    }
+}
