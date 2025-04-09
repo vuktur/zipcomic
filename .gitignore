@@ -1,4 +1,10 @@
 .vscode
+.idea
+
 *.log
 *.jpg
 chaps/*
+
+# Added by cargo
+
+/target
