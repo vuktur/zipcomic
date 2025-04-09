@@ -1,56 +1,53 @@
 {
     "default": {
-        "chaptersListElt": "ul li a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": null,
+        "chapterList": null,
+        "chapterItem": "a",
+        "chapterListDescending": true,
         "title": "h1",
-        "img": "img",
+        "imgList": null,
+        "imgItem": "img",
         "src": "src",
-        "nextBtn": null
+        "nextPage": {
+            "btn" : null,
+            "urlFormat": null
+        },
+        "imgEncrypt": null
     },
     "mangascan.ws": {
-        "chaptersListElt": "ul.chapters li a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": null,
-        "title": ".page-header h1",
-        "img": "#all img",
-        "src": "data-src",
-        "nextBtn": null
+        "chapterList": ".chapters",
+        "imgList": "#all",
+        "src": "data-src"
     },
     "mangakakalot.com": {
-        "chaptersListElt": ".chapter-list .row a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": null,
-        "title": ".info-top-chapter h2",
-        "img": ".container-chapter-reader img",
-        "src": "src",
-        "nextBtn": null
+        "chapterList": ".chapter-list",
+        "imgList": ".container-chapter-reader"
+    },
+    "chapmanganato.com": {
+        "chapterList": ".row-content-chapter",
+        "imgList": ".container-chapter-reader"
+    },
+    "mangakakalot.is": {
+        "chapterList": "#list-{cORv}-{lang}",
+        "imgList": ".card-wrap",
+        "src": "data-url",
+        "imgEncrypt": "square"
     },
     "france-manga.org": {
-        "chaptersListElt": ".chapters-list a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": "{url}/{n}",
+        "chapterList": ".chapters-list",
         "title": ".entry-title",
-        "img": ".entry-content .separator img",
-        "src": "src",
-        "nextBtn": ".btn-next"
+        "nextPage":{
+            "btn": ".btn-next",
+            "urlFormat": "{url}{n}"
+        }
     },
     "oyasumipunpun.com": {
-        "chaptersListElt": "#main ul.su-posts li a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": null,
-        "title": ".entry-title",
-        "img": ".entry-content .separator a",
-        "src": "href",
-        "nextBtn": null
+        "chapterList": "#main ul.su-posts",
+        "imgList": ".entry-content",
+        "imgItem": ".separator>a",
+        "src": "href"
     },
     "kaijimanga.com": {
-        "chaptersListElt": "#ceo_latest_comics_widget-3>ul li a",
-        "chaptersListOrderDescending": true,
-        "pageFormat": null,
-        "title": ".entry-title",
-        "img": ".entry-content img",
-        "src": "src",
-        "nextBtn": null
+        "chapterList": "#ceo_latest_comics_widget-3",
+        "imgList": ".entry-content"
     }
 }
